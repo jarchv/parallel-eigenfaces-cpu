@@ -1,1 +1,1 @@
-# eigenfaces
+# Eigenfaces
