@@ -1,3 +1,10 @@
+/**
+*   @autor      : José Chávez    
+*   @file       : main.cpp
+*   @viersion   : v1.0
+*   @purpose    : Parallel implementation of eigenfaces
+*/
+
 #include <iostream>
 #include <stdio.h>
 #include <string>
