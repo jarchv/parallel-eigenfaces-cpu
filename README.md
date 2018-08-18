@@ -4,4 +4,4 @@ Parallel implementation of eigen faces.
 
 ## Author
 
-* **José Chávez** - [PurpleBooth](https://github.com/joseucsp	)
+* **José Chávez** - [Profile](https://github.com/joseucsp	)
