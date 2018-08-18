@@ -4,42 +4,45 @@
 #include <iomanip>
 #include <opencv2/highgui.hpp>
 #include <omp.h>
-#include "tools.hpp"
+
+#include "eig.hpp"
+#include "images.hpp"
+#include "nn.h"
 
 #define PATH "faces/"
+
 using namespace std;
 using namespace cv;
 
 void readImages(double **X, int folders, int nimgs, int rows, int cols);
 void getS(double **S, double **X, double **Xm, double **Xm_t, double *V, int X_row, int X_cols);
 void getVD(double **S, double *lambda, double **eigV, double tol1, double tol2);
+void showImage(double **I, int j, int w, int h);
 
 int main(int argc, char *argv[]){
-    int         i,j,k;
-    int         nfiles = 40;      //  # folders
-    int         nimages  = 10;      //  # imgs x folder
-
-
+    
+    int             i,j,k;
+    int             nfiles = 40;        //  # folders
+    int             nimages  = 10;      //  # imgs x folder
 
 //  Matrix X, Xm, Xm_t
-    double       **X;
-    double       **Xm;
-    double       **Xm_t;
-    double       **S;
-    double       **eigenVec;
-    double       *eigenVal;
-    double       *muV;
-    int         X_rows=nfiles*nimages;
-    int         imgw  = 92;
-    int         imgh  = 112;
-    int         X_cols= imgh*imgw;   //  h = 112, w = 92
+    double          **X;
+    double          **Xm;
+    double          **Xm_t;
+    double          **S;
+    double          **eigenVec;
+    double          *eigenVal;
+    double          *muV;
+    int             X_rows=nfiles*nimages;
+    int             imgw  = 92;
+    int             imgh  = 112;
+    int             X_cols= imgh*imgw;   //  h = 112, w = 92
 
-    X       = new double*[X_rows];
-    Xm      = new double*[X_rows];
-    Xm_t    = new double*[X_cols];
-    S       = new double*[X_rows];
-
-    muV     = new double[X_cols];    
+    X           = new double*[X_rows];
+    Xm          = new double*[X_rows];
+    Xm_t        = new double*[X_cols];
+    S           = new double*[X_rows];
+    muV         = new double[X_cols];    
     
     for(int ni=0; ni<X_rows; ni++){
         X[ni]   = new double[X_cols];
@@ -51,46 +54,67 @@ int main(int argc, char *argv[]){
         Xm_t[pi] = new double[X_rows];
     }
 
-    
-    readImages(X,nfiles,nimages,imgh,imgw);
-    getS(S,X,Xm,Xm_t, muV, X_rows, X_cols);
-
+    double **W = new double*[imgh*imgw];
+    for(int iw=0; iw<imgh*imgw; iw++){
+        W[iw] = new double[X_rows];
+    }   
 
     double *D = new double[X_rows];
     double **V = new double*[X_rows];
     for(int i=0; i<X_rows; i++){
         V[i] = new double[X_rows];
     }
+
     double tol = 1.0e-20;
+    int pdim = imgh * imgw; 
+    readImages(X,nfiles,nimages,imgh,imgw);
+    getS(S,X,Xm,Xm_t, muV, X_rows, X_cols);
     eigenfn(S,V,D,X_rows,tol);
-    
-    int pdim = imgh*imgw;
-    double **W = new double*[pdim];
-    for(int iw=0; iw<pdim; iw++){
-        W[iw] = new double[X_rows];
-    }
-    
     getW(Xm_t, V, W, pdim, X_rows);
     
+    double *temp = new double[pdim];
 
-    //for(int ivec=0; ivec<)
-    double_t *matting = new double_t[pdim];
-    double *mm = new double[pdim];
-    for (int i=0; i<pdim; i++){
-        matting[i] = (double_t)W[i][0];
-        mm[i] = W[i][0];
-        cout << "W["<<i<<"][0]="<<W[i][0]<<endl;     
+    for(int j=0; j < 16; j++){
+        for(int i=0; i< pdim; i++){
+            temp[i] = W[i][j];
+        }
+
+        showImage(temp, imgw, imgh);
     }
-    cout<<"lambda: "<<D[0]<<endl;
     
-    cout<<"norm: "<<norm(mm,pdim)<<endl;
-    Mat sample(imgh,imgw,CV_64FC1, matting);
+    for(int ir=10; ir < 400; ir+=10){
+        temp = Reconstructor(Xm[0], W, pdim, ir);
+        cout<<"\tk -> "<<ir<<endl;
+        showImage(temp, imgw, imgh);   
+    }
 
-    Mat dst;
-    normalize(sample, dst, 0.0,1.0, NORM_MINMAX, CV_64FC1);
-    imshow("image", dst);
-    waitKey(0);
+    double **W      = getW(40, 300, 0.01);
+    double  *b      = getBias(40, 0.0);
+    double *pred     = new double[40];
+    
+    double loss;
+    double label[40];
+
+    for (int lb=0; lb < 40; lb++){
+        label[lb] = 0.0;
+    }
+    
+    for (int epoch=0; epoch < 100; epoch++){
+        loss = 0.0;
+        for (int i = 0; i < X_rows; i++){
+            pred = getPred(Im[i], 40, X_rows, W, b);
+            softMax(pred, 40);
+            loss += crossEntropy(double *output, double *label, int sizeo)
+            backProp(W,Im[i],pdim,40,b,i)
+        }
         
+        loss /= X_rows;
+        cout << "loss \t:\t" << loss << endl;         
+    }
+
+
+    getPred(input, int isize, int osize, double **W, double *b)
+     
 //  free
     for(int ni=0; ni<X_rows; ni++){
         delete [] X[ni];
@@ -103,12 +127,12 @@ int main(int argc, char *argv[]){
     delete [] X;
     delete [] Xm;
     delete [] Xm_t;
+    delete [] temp;
 
     return 0;
 }
 
 void readImages(double **X, int folders, int nimgs, int h, int w){
-//    namedWindow("image",WINDOW_AUTOSIZE);
     string      ifolder;
     string      jimage;
     string      filename;
@@ -120,15 +144,8 @@ void readImages(double **X, int folders, int nimgs, int h, int w){
             ifolder     = "s" + to_string(i)+"/";
             jimage      = to_string(j) + ".pgm";
             filename    = PATH + ifolder + jimage;
-            cout<<filename<<endl;
+//            cout<<filename<<endl;
             Mat I = imread(filename, IMREAD_GRAYSCALE);
-
-//            display image
-//            imshow("image", I);
-//            waitKey(0);
-           
-            //I.convertTo(I, CV_64F);
-            //double_t *var = new double_t[h*w];
 //          Get X
             n = (i-1)*nimgs + (j-1);
         
@@ -136,22 +153,10 @@ void readImages(double **X, int folders, int nimgs, int h, int w){
                 for(int ci=0; ci<w; ci++){ 
                     X[n][ri*w + ci] = (double)I.at<uint8_t>(ri,ci);
                 }
-            }
-             
-            //for(int i = 0; i<h*w; i++){
-            //    var[i] = (double_t)(X[n][i]/255 - 0.5);
-            //}
-            //Mat sam(h,w,CV_64FC1, var);
-            //Mat dst;
-            //normalize(sam, dst, 0.0, 1.0, NORM_MINMAX, CV_64FC1);
-            //sam.convertTo(dst, CV_8UC1);
-            //imshow("dst",dst);
-            //imshow("sam",sam);
-            //imshow("I",I);
-            //waitKey(0);                     
+            }             
         }
     }
-    cout <<"\nreadImages:\n"<<endl;
+    cout <<"\nImages:\n"<<endl;
     cout <<"\t#elements(X.rows) = "<<n+1<<endl;  
 }
 
@@ -169,7 +174,7 @@ void getS(double **S, double **X, double **Xm, double **Xm_t, double *V, int X_r
             Xm[ni][pi] = X[ni][pi] - mu;
         }
     }
-    cout<<"Xm \t\t<-"<<endl;
+    cout<<"\nXm \t\t<-"<<endl;
 
 //  Get transpose
     for(int ni=0; ni<X_rows; ni++){
@@ -192,4 +197,3 @@ void getS(double **S, double **X, double **Xm, double **Xm_t, double *V, int X_r
     }    
     cout<<"S = Xm*Xm_t \t<-"<<endl;   
 }
-

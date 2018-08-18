@@ -1,12 +1,10 @@
 #include <math.h>
 #include <cmath>
 #include <stdio.h>
+#include "tools.hpp"
 
 using namespace std;
 
-
-
-void normalize(double *A, int n);
 void copyV(double *v1, double *v2, int n){
     for(int i=0; i<n; i++){
         v2[i] = v1[i];
@@ -62,28 +60,12 @@ void vectorOp(double *A, double *B, double *C,int n, int op){
     }
 }
 
-double norm(double *A, int n){
-    double temp=0.0;
-    for(int i=0; i<n; i++){
-        temp+= A[i]*A[i];
-    }
-
-    return sqrt(temp);
-}
-
 double normdiff(double *A, double *B, int n){
     double temp=0.0;
     for(int i=0; i<n; i++){
         temp+= pow(A[i]-B[i],2); 
     }
     return sqrt(temp);
-}
-
-void normalize(double *A, int n){
-    double mod = norm(A,n);
-    for(int i=0; i<n; i++){
-        A[i]/=mod;
-    }
 }
 
 void eigenfn(double **A, double **eigenVec, double *eigenVal, int n, double tol){
@@ -131,32 +113,7 @@ void eigenfn(double **A, double **eigenVec, double *eigenVal, int n, double tol)
         copy2Mat(eigenVec,xnew,iv,n);
         updateAA(AA,lambda,xnew,n);
     }
-    cout<<endl;
-    cout<<"\nDone!"<<endl;
+    cout<<" done!"<<endl;
 }
 
-void getW(double **A, double **B, double **W, int m, int n){
-    double temp;
 
-    for(int i=0; i<m; i++){
-        for(int j=0; j<n; j++){
-            temp = 0.0;
-            for(int k=0; k<n; k++){
-                temp += A[i][k]*B[k][j];                
-            }
-            W[i][j] = temp;
-        }
-    }
-    
-    double *vecW_j = new double[m];
-
-    for(int jW=0; jW<n; jW++){
-        for(int iW=0; iW<m; iW++){
-            vecW_j[iW] = W[iW][jW];
-        }
-        normalize(vecW_j, m);
-        for(int iW=0; iW<m; iW++){
-            W[iW][jW] = vecW_j[iW];
-        }       
-    }
-}
