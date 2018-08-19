@@ -1,5 +1,4 @@
 #include <opencv2/highgui.hpp>
-#include "tools.hpp"
 
 using namespace std;
 using namespace cv;
@@ -24,7 +23,7 @@ void getW(double **A, double **B, double **W, int m, int n){
         for(int iW=0; iW<m; iW++){
             vecW_j[iW] = W[iW][jW];
         }
-        normalize(vecW_j, m);
+        VecNormalizer(vecW_j, m);
         for(int iW=0; iW<m; iW++){
             W[iW][jW] = vecW_j[iW];
         }       

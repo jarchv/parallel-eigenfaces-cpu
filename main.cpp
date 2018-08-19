@@ -12,9 +12,10 @@
 #include <opencv2/highgui.hpp>
 #include <omp.h>
 
+#include "tools.hpp"
 #include "eig.hpp"
 #include "images.hpp"
-#include "nn.h"
+#include "nn.hpp"
 
 #define PATH "faces/"
 
@@ -30,7 +31,7 @@ int main(int argc, char *argv[]){
     
     int             i,j,k;
     int             nfiles = 40;        //  # folders
-    int             nimages  = 10;      //  # imgs x folder
+    int             file_imgs  = 10;      //  # imgs x folder
 
 //  Matrix X, Xm, Xm_t
     double          **X;
@@ -40,7 +41,7 @@ int main(int argc, char *argv[]){
     double          **eigenVec;
     double          *eigenVal;
     double          *muV;
-    int             X_rows=nfiles*nimages;
+    int             X_rows=nfiles*file_imgs;
     int             imgw  = 92;
     int             imgh  = 112;
     int             X_cols= imgh*imgw;   //  h = 112, w = 92
@@ -74,53 +75,69 @@ int main(int argc, char *argv[]){
 
     double tol = 1.0e-20;
     int pdim = imgh * imgw; 
-    readImages(X,nfiles,nimages,imgh,imgw);
+    readImages(X,nfiles,file_imgs,imgh,imgw);
     getS(S,X,Xm,Xm_t, muV, X_rows, X_cols);
     eigenfn(S,V,D,X_rows,tol);
     getW(Xm_t, V, W, pdim, X_rows);
     
     double *temp = new double[pdim];
 
-    for(int j=0; j < 16; j++){
-        for(int i=0; i< pdim; i++){
-            temp[i] = W[i][j];
-        }
+    //for(int j=0; j < 16; j++){
+    //    for(int i=0; i< pdim; i++){
+    //        temp[i] = W[i][j];
+    //    }
 
-        showImage(temp, imgw, imgh);
-    }
-    
-    for(int ir=10; ir < 400; ir+=10){
-        temp = Reconstructor(Xm[0], W, pdim, ir);
-        cout<<"\tk -> "<<ir<<endl;
-        showImage(temp, imgw, imgh);   
-    }
+    //    showImage(temp, imgw, imgh);
+    //}
 
-    double **W      = getW(40, 300, 0.01);
-    double  *b      = getBias(40, 0.0);
-    double *pred     = new double[40];
+    //for(int ir=10; ir < X_rows; ir+=10){
+    //    temp = Reconstructor(Xm[0], W, pdim, ir);
+    //    cout<<"\tk -> "<<ir<<endl;
+    //    showImage(temp, imgw, imgh);   
+    //}
+
+    //int key = 300;
+    //cout<<"set key = "<<key<<endl;
+    //double **Y = new double*[X_rows];
+    //for (int i = 0; i < X_rows; i++)
+    //{
+    //    Y[i] = Reconstructor[Xm[i], W, pdim, key]
+    //}
+    double **nn_W      = getW(nfiles, pdim);
+    double  *nn_b      = getBias(nfiles, 0.0);
+    double *pred       = new double[nfiles];
     
     double loss;
-    double label[40];
+    double **label     = new double*[X_rows];
+    double *output;
 
-    for (int lb=0; lb < 40; lb++){
-        label[lb] = 0.0;
+    for (int in=0; in < X_rows; in++){
+        label[in] = new double[nfiles];
     }
     
-    for (int epoch=0; epoch < 100; epoch++){
+    for (int in=0; in < X_rows; in++){
+        for (int il = 0; il < nfiles; il++)
+        {
+            label[in][il] = (double)((in / 10) == il); 
+        }
+    } 
+    double lr = 0.01;
+
+    for (int epoch=0; epoch < 2; epoch++){
         loss = 0.0;
         for (int i = 0; i < X_rows; i++){
-            pred = getPred(Im[i], 40, X_rows, W, b);
-            softMax(pred, 40);
-            loss += crossEntropy(double *output, double *label, int sizeo)
-            backProp(W,Im[i],pdim,40,b,i)
+            pred = getPred(Xm[i],pdim, nfiles, nn_W, nn_b);
+            cout<<"\t pred("<<i<<")="<<output<<endl;
+            output = softMax(pred, nfiles);
+            cout<<"\t output("<<i<<")="<<output<<endl;
+            loss += crossEntropy(output,label[i], nfiles);
+            cout<<"\t loss("<<i<<")="<<loss<<endl;
+            backProp(nn_W,nn_b,Xm[i],X_rows,nfiles,label[i], output, lr);
         }
         
-        loss /= X_rows;
-        cout << "loss \t:\t" << loss << endl;         
+        loss /= (double)X_rows;
+        cout << "loss epoch\t:\t" << loss << endl;         
     }
-
-
-    getPred(input, int isize, int osize, double **W, double *b)
      
 //  free
     for(int ni=0; ni<X_rows; ni++){
@@ -163,8 +180,7 @@ void readImages(double **X, int folders, int nimgs, int h, int w){
             }             
         }
     }
-    cout <<"\nImages:\n"<<endl;
-    cout <<"\t#elements(X.rows) = "<<n+1<<endl;  
+    cout <<"#elements(X.rows) = "<<n+1<<endl;  
 }
 
 void getS(double **S, double **X, double **Xm, double **Xm_t, double *V, int X_rows, int X_cols){
@@ -181,7 +197,7 @@ void getS(double **S, double **X, double **Xm, double **Xm_t, double *V, int X_r
             Xm[ni][pi] = X[ni][pi] - mu;
         }
     }
-    cout<<"\nXm \t\t<-"<<endl;
+    cout<<"\n->\tXm"<<endl;
 
 //  Get transpose
     for(int ni=0; ni<X_rows; ni++){
@@ -189,7 +205,7 @@ void getS(double **S, double **X, double **Xm, double **Xm_t, double *V, int X_r
             Xm_t[pi][ni] = Xm[ni][pi];
         }
     }
-    cout<<"Xm_t \t\t<-"<<endl;    
+    cout<<"->\tXm_t"<<endl;    
 
 //  Get S
     double temp;
@@ -202,5 +218,5 @@ void getS(double **S, double **X, double **Xm, double **Xm_t, double *V, int X_r
             S[sr][sc] = temp;
         }
     }    
-    cout<<"S = Xm*Xm_t \t<-"<<endl;   
+    cout<<"-> \tS = Xm*Xm_t"<<endl;   
 }

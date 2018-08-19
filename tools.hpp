@@ -6,7 +6,7 @@ double norm(double *A, int n){
     return sqrt(temp);
 }
 
-void normalize(double *A, int n){
+void VecNormalizer(double *A, int n){
     double mod = norm(A,n);
     for(int i=0; i<n; i++){
         A[i]/=mod;

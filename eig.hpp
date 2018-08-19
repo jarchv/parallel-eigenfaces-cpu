@@ -1,7 +1,6 @@
 #include <math.h>
 #include <cmath>
 #include <stdio.h>
-#include "tools.hpp"
 
 using namespace std;
 
@@ -95,7 +94,7 @@ void eigenfn(double **A, double **eigenVec, double *eigenVal, int n, double tol)
         while(1){
             matmul(AA,x0,xnew,n);
             lambda = norm(xnew,n);
-            normalize(xnew,n);
+            VecNormalizer(xnew,n);
             
             if((abs((ol_lambda-lambda)/ol_lambda)<tol) and (normdiff(x0,xnew,n)<tol)){
                 break;
