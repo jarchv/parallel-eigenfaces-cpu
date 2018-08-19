@@ -1,4 +1,3 @@
-#include <math.h>
 #include <stdlib.h>
 
 double **getW(int n, int m){
@@ -8,8 +7,9 @@ double **getW(int n, int m){
 	}
 	for(int in=0; in < n; in++){
 		for(int im=0; im < m; im++){
-			wtemp[in][im] = (double)(rand()%100)/1000;
+			wtemp[in][im] = (double)(rand()%100);
 		}
+		VecNormalizer(wtemp[in], m);
 	}
 	return wtemp;
 }
@@ -41,20 +41,19 @@ double *getPred(double *input, int isize, int osize, double **nn_W, double *nn_b
 }
 
 double *softMax(double *pred_in, int sizeo){
-	double *output = new double[sizeo];
+	double *output_temp = new double[sizeo];
 	double sum_temp= 0.0;
 	
 	for (int is = 0; is < sizeo; is++){
-		output[is] = exp(pred_in[is]);
-		sum_temp  += output[is];
-	}
-	
-	for (int is = 0; is < sizeo; is++){
-		output[is] = output[is]/sum_temp;
-		//cout<<"softMax("<<is<<")="<<output[is]<<endl;;
+		output_temp[is] = exp(pred_in[is]);
+		sum_temp  += output_temp[is];
 	}
 
-	return output;
+	for (int is = 0; is < sizeo; is++){
+		output_temp[is] = output_temp[is]/sum_temp;
+	}
+
+	return output_temp;
 }
 
 double crossEntropy(double *output, double *label, int sizeo){
@@ -64,7 +63,7 @@ double crossEntropy(double *output, double *label, int sizeo){
 		temp -= label[is]*log(output[is]); 
 	}
 
-	return temp;
+	return temp/sizeo;
 }
 
 void backProp(double **nnW,  double *nnb, double *input, int size_input, int sizeout, double *label, double *output, double learning_rate){

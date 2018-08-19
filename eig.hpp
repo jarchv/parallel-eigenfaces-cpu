@@ -68,8 +68,8 @@ double normdiff(double *A, double *B, int n){
 }
 
 void eigenfn(double **A, double **eigenVec, double *eigenVal, int n, double tol){
-    cout<<"\neigenfn...\n"<<endl;
     double **AA = new double*[n];
+    printf("\n");
     for(int i=0; i<n; i++){
         AA[i] = new double[n];
     }
@@ -86,7 +86,7 @@ void eigenfn(double **A, double **eigenVec, double *eigenVal, int n, double tol)
     double ol_lambda;
     
     for(int iv=0; iv<n;iv++){
-        printf("\r%3d%%",(int)(100*(iv+1)/n));
+        printf("\rgetting eigenvectors %3d%%",(int)(100*(iv+1)/n));
         fflush(stdout);        
         copyV(xini,x0,n);
         ol_lambda = 0.0;
@@ -116,3 +116,19 @@ void eigenfn(double **A, double **eigenVec, double *eigenVal, int n, double tol)
 }
 
 
+double *getProyection(double *Img, double **Wk, int m, int k){
+    double *Y       = new double[k];
+    double temp;
+
+    for(int jk=0; jk < k; jk++){
+        temp = 0.0;
+        for(int im=0; im<m; im++){
+            temp += Img[im]*Wk[im][jk];
+        }
+        Y[jk] = temp;
+    }
+
+    VecNormalizer(Y, k);
+    
+    return Y;
+}
