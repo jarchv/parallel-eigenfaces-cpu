@@ -2,8 +2,6 @@
 #include <cmath>
 #include <stdio.h>
 
-#define thread_count 8
-
 using namespace std;
 
 void copyV(double *v1, double *v2, int n){

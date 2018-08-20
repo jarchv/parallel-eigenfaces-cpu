@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#define thread_count 8
+
 
 double **getW(int n, int m){
 	double **wtemp = new double*[n];
@@ -28,7 +28,6 @@ double *getPred(double *input, int isize, int osize, double **nn_W, double *nn_b
 	double temp;
 	double *pred = new double[osize];
 
-#   pragma omp parallel num_threads(thread_count)
 	for(int i=0; i < osize; i++){
 		temp = 0.0;
 		for(int j=0; j < isize; j++){
@@ -73,12 +72,8 @@ void backProp(double **nnW,  double *nnb, double *input, int size_input, int siz
 
 	for (int j=0; j < sizeout; j++){
 		temp  	= -label[j]*(1-output[j]); //(-label[j]/output[j])*(output[j]*(1-output[j]));
-		//temp   *= output[j]*(1-output[j]); 		
-		//cout<<"temp: "<<temp<<endl;
-#   	pragma omp parallel num_threads(thread_count)
 		for (int i=0; i < size_input; i++){
 			nnW[j][i] -= temp*input[i]*learning_rate;
-			//cout<<"\tnnW["<<j<<"]["<<i<<"] ="<< nnW[j][i]<<endl;
 		}
 		nnb[j]   -= temp*learning_rate; 
 	}
