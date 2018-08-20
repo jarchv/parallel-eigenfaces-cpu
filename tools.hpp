@@ -5,7 +5,8 @@
 #include <omp.h>
 
 #define PATH "faces/"
-#define thread_count 2
+
+int thread_count;
 
 using namespace std;
 using namespace cv;	
@@ -26,7 +27,7 @@ int maxIndx(double *pred_in, int size){
 
 double norm(double *A, int n){
     double temp=0.0;
-#   pragma omp parallel for num_threads(thread_count) reduction(+:temp)
+
     for(int i=0; i<n; i++){
         temp+= A[i]*A[i];
     }
@@ -65,7 +66,8 @@ void readImages(double **X, int folders, int nimgs, int h, int w){
             Mat I = imread(filename, IMREAD_GRAYSCALE);
 
             n = (i-1)*nimgs + (j-1);
-        
+
+#           pragma omp parallel for num_threads(thread_count)
             for(int ri=0; ri<h; ri++){
                 for(int ci=0; ci<w; ci++){ 
                     X[n][ri*w + ci] = (double)I.at<uint8_t>(ri,ci);

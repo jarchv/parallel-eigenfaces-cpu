@@ -8,7 +8,6 @@ void getW(double **A, double **B, double **W, int m, int n){
     cout<<"\nGetting W ...\n"<<endl;
     double temp;
 
-#   pragma omp parallel for num_threads(thread_count)
     for(int i=0; i<m; i++){
         for(int j=0; j<n; j++){
             temp = 0.0;

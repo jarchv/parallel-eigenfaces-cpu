@@ -24,6 +24,7 @@ void showImage(double **I, int j, int w, int h);
 
 int main(int argc, char *argv[]){
     
+    thread_count = strtol(argv[1], NULL, 10);
     int             i,j,k;
     int             nfiles = 40;            //  # folders
     int             file_imgs  = 10;        //  # imgs x folder
@@ -87,15 +88,14 @@ int main(int argc, char *argv[]){
         for(int i=0; i< X_cols; i++){
             temp[i] = W[i][j];
         }
+        showImage(temp, imgw, imgh);
     }
-    //    showImage(temp, imgw, imgh);
-    //}
 
-    //for(int ir=10; ir < X_rows; ir+=10){
-    //    temp = Reconstructor(Xm[0], W, X_cols, ir);
-    //    cout<<"\tk -> "<<ir<<endl;
-    //    showImage(temp, imgw, imgh);   
-    //}
+    for(int ir=10; ir < X_rows; ir+=10){
+        temp = Reconstructor(Xm[0], W, X_cols, ir);
+        cout<<"\tk -> "<<ir<<endl;
+        showImage(temp, imgw, imgh);   
+    }
 
     int key = 300;
     cout<<"->\tk\t= "<<key<<endl;
@@ -133,6 +133,7 @@ int main(int argc, char *argv[]){
     double t4 = omp_get_wtime();    
     cout<<"\ntraining:"<<endl;
     cout<<"=========\n"<<endl;
+
     for (int epoch=0; epoch < 100; epoch++){
         loss = 0.0;
         for (int i = 0; i < X_rows; i++){
@@ -151,14 +152,19 @@ int main(int argc, char *argv[]){
     cout<<"====="<<endl;
 
     int rand_indx;
-
+    double valid=0;
     for (int i = 0; i < X_rows; i++){
         rand_indx = rand()%X_rows;
         pred = getPred(Y[rand_indx], key, nfiles, nn_W, nn_b);
+
         //printf("label[%3d]\t= %2d\n", rand_indx/10, maxIndx(pred, nfiles));
+        if ((rand_indx/10) == maxIndx(pred, nfiles)){
+            valid++;
+        }
         //showImage(X[rand_indx], imgw, imgh);
     }
 
+    printf("Acc \t: %.4f%\n", 100*valid/X_rows);
     double t6 = omp_get_wtime();
     
     printf("dt1: %.5lf\n", t2 - t1);

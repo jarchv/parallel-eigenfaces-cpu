@@ -65,6 +65,7 @@ void vectorOp(double *A, double *B, double *C,int n, int op){
 double normdiff(double *A, double *B, int n){
     double temp=0.0;
 #   pragma omp parallel for num_threads(thread_count) reduction(+:temp)
+
     for(int i=0; i<n; i++){
         temp+= pow(A[i]-B[i],2); 
     }
@@ -126,9 +127,10 @@ double *getProyection(double *Img, double **Wk, int m, int k){
     double *Y       = new double[k];
     double temp;
 
-#   pragma omp parallel for num_threads(thread_count) reduction(+:temp)
+
     for(int jk=0; jk < k; jk++){
         temp = 0.0;
+#       pragma omp parallel for num_threads(thread_count) reduction(+:temp)
         for(int im=0; im<m; im++){
             temp += Img[im]*Wk[im][jk];
         }
