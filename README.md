@@ -13,7 +13,7 @@ git clone https://github.com/joseucsp/parallel-eigenfaces.git
 ### Compilar el main.cpp
 ```
 make main
-´´´
+```
 ### Ejecutar el programa
 ```
 ./main <nucleos>
