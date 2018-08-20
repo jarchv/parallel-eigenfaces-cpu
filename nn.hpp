@@ -72,6 +72,7 @@ void backProp(double **nnW,  double *nnb, double *input, int size_input, int siz
 
 	for (int j=0; j < sizeout; j++){
 		temp  	= -label[j]*(1-output[j]); //(-label[j]/output[j])*(output[j]*(1-output[j]));
+#   	pragma omp parallel for num_threads(thread_count)
 		for (int i=0; i < size_input; i++){
 			nnW[j][i] -= temp*input[i]*learning_rate;
 		}

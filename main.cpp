@@ -78,8 +78,7 @@ int main(int argc, char *argv[]){
     double t1 = omp_get_wtime();    
     eigenfn(S,V,D,X_rows,tol);
     double t2 = omp_get_wtime();    
-    getW(Xm_t, V, W, X_cols, X_rows);
-    double t3 = omp_get_wtime();    
+    getW(Xm_t, V, W, X_cols, X_rows);  
     double *temp = new double[X_cols];
 
 
@@ -98,7 +97,7 @@ int main(int argc, char *argv[]){
     }
 
     int key = 300;
-    cout<<"->\tk\t= "<<key<<endl;
+    cout<<"\n\tk -> "<<key<<"(set)"<<endl;
     double **Y = new double*[X_rows];
 
     for (int iy = 0; iy < X_rows; iy++)
@@ -165,12 +164,10 @@ int main(int argc, char *argv[]){
     }
 
     double n = (double)X_rows;
-    cout<<"Acc :"<<100*valid/n;
-    double t6 = omp_get_wtime();
+    cout<<"Accuracy :"<<100*valid/n<<"%"<<endl;
     
-    printf("dt1: %.5lf\n", t2 - t1);
-    printf("dt4: %.5lf\n", t5 - t4);
-    printf("dt5: %.5lf\n", t6 - t5);   
+    printf("\nEigenfaces(PCA)\t: %.5lf\ns", t2 - t1);
+    printf("Training(NN)\t: %.5lf\ns", t5 - t4);   
 //  free
     for(int ni=0; ni<X_rows; ni++){
         delete [] X[ni];
