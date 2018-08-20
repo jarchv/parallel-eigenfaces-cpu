@@ -2,15 +2,19 @@
 #include <cmath>
 #include <stdio.h>
 
+#define thread_count 8
+
 using namespace std;
 
 void copyV(double *v1, double *v2, int n){
+#   pragma omp parallel for num_threads(thread_count)
     for(int i=0; i<n; i++){
         v2[i] = v1[i];
     }
 }
 
 void copyM(double **m1, double **m2, int n){
+#   pragma omp parallel for num_threads(thread_count)
     for(int i=0; i<n; i++){
         for(int j=0; j<n; j++){
             m2[i][j]=m1[i][j];
@@ -20,7 +24,7 @@ void copyM(double **m1, double **m2, int n){
 
 void matmul(double **X, double *B, double *C, int n){
     double temp;
-
+#   pragma omp parallel for num_threads(thread_count) reduction(+:temp)
     for(int iA=0; iA<n;iA++){        
         temp = 0.0;
         for(int k=0;k<n; k++){
@@ -31,6 +35,7 @@ void matmul(double **X, double *B, double *C, int n){
 }
 
 void updateAA(double **AA, double lambda, double *xnew, int n){
+#   pragma omp parallel for num_threads(thread_count)
     for(int i=0; i<n; i++){
         for(int j=0; j<n; j++){
             AA[i][j] -= lambda*xnew[i]*xnew[j];
@@ -61,6 +66,7 @@ void vectorOp(double *A, double *B, double *C,int n, int op){
 
 double normdiff(double *A, double *B, int n){
     double temp=0.0;
+#   pragma omp parallel for num_threads(thread_count) reduction(+:temp)
     for(int i=0; i<n; i++){
         temp+= pow(A[i]-B[i],2); 
     }
@@ -70,12 +76,14 @@ double normdiff(double *A, double *B, int n){
 void eigenfn(double **A, double **eigenVec, double *eigenVal, int n, double tol){
     double **AA = new double*[n];
     printf("\n");
+
     for(int i=0; i<n; i++){
         AA[i] = new double[n];
     }
 
     copyM(A,AA,n);
     double *xini = new double[n];
+
     for(int j=0;j<n;j++){
         if(j==0){xini[j] = 1.0;}
         else{xini[j] = 0.0;}
@@ -120,6 +128,7 @@ double *getProyection(double *Img, double **Wk, int m, int k){
     double *Y       = new double[k];
     double temp;
 
+#   pragma omp parallel for num_threads(thread_count) reduction(+:temp)
     for(int jk=0; jk < k; jk++){
         temp = 0.0;
         for(int im=0; im<m; im++){

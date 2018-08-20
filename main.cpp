@@ -16,6 +16,8 @@
 
 using namespace cv;
 
+#define thread_count 8
+
 void readImages(double **X, int folders, int nimgs, int rows, int cols);
 void getS(double **S, double **X, double **Xm, double **Xm_t, double *V, int X_row, int X_cols);
 void getVD(double **S, double *lambda, double **eigV, double tol1, double tol2);
@@ -47,6 +49,7 @@ int main(int argc, char *argv[]){
     S           = new double*[X_rows];
     muV         = new double[X_cols];    
     
+
     for(int ni=0; ni<X_rows; ni++){
         X[ni]   = new double[X_cols];
         Xm[ni]  = new double[X_cols];
@@ -69,19 +72,26 @@ int main(int argc, char *argv[]){
     }
 
     double tol = 1.0e-20;
-     
-    readImages(X,nfiles,file_imgs,imgh,imgw);
-    getS(S,X,Xm,Xm_t, muV, X_rows, X_cols);
-    eigenfn(S,V,D,X_rows,tol);
-    getW(Xm_t, V, W, X_cols, X_rows);
     
+    double t1 = omp_get_wtime();    
+    readImages(X,nfiles,file_imgs,imgh,imgw);
+    double t2 = omp_get_wtime();    
+    getS(S,X,Xm,Xm_t, muV, X_rows, X_cols);
+    double t3 = omp_get_wtime();    
+    eigenfn(S,V,D,X_rows,tol);
+    double t4 = omp_get_wtime();    
+    getW(Xm_t, V, W, X_cols, X_rows);
+    double t5 = omp_get_wtime();    
     double *temp = new double[X_cols];
 
-    //for(int j=0; j < 16; j++){
-    //    for(int i=0; i< X_cols; i++){
-    //        temp[i] = W[i][j];
-    //    }
+#   pragma omp parallel num_threads(thread_count)
 
+#   pragma omp for
+    for(int j=0; j < 16; j++){
+        for(int i=0; i< X_cols; i++){
+            temp[i] = W[i][j];
+        }
+    }
     //    showImage(temp, imgw, imgh);
     //}
 
@@ -94,10 +104,12 @@ int main(int argc, char *argv[]){
     int key = 300;
     cout<<"->\tk\t= "<<key<<endl;
     double **Y = new double*[X_rows];
+#   pragma omp for
     for (int iy = 0; iy < X_rows; iy++)
     {
         Y[iy] = new double[key];
     }
+#   pragma omp for
     for (int i = 0; i < X_rows; i++)
     {
         Y[i] = getProyection(Xm[i], W, X_cols, key);
@@ -110,10 +122,12 @@ int main(int argc, char *argv[]){
     double **labels    = new double*[X_rows];
     double *output     = new double[nfiles];
 
+#   pragma omp for
     for (int in=0; in < X_rows; in++){
         labels[in] = new double[nfiles];
     }
-    
+
+#   pragma omp for    
     for (int in=0; in < X_rows; in++){
         for (int il = 0; il < nfiles; il++)
         {
@@ -122,6 +136,7 @@ int main(int argc, char *argv[]){
     } 
     double lr = 5e-1;
 
+    double t6 = omp_get_wtime();    
     cout<<"\ntraining:"<<endl;
     cout<<"=========\n"<<endl;
     for (int epoch=0; epoch < 100; epoch++){
@@ -134,9 +149,31 @@ int main(int argc, char *argv[]){
         }
         
         loss /= (double)X_rows;
-        printf("\tloss (epoch: %3d)\t: %0.6f\n", epoch, loss);       
+        //printf("\tloss (epoch: %3d)\t: %0.6f\n", epoch, loss);       
     }
-     
+    printf("\tloss (epoch: %3d)\t: %0.6f\n", 100, loss);
+    double t7 = omp_get_wtime();    
+    cout<<"\ntest:"<<endl;
+    cout<<"====="<<endl;
+
+    int rand_indx;
+    int validation;
+    for (int i = 0; i < X_rows; i++){
+        rand_indx = rand()%X_rows;
+        pred = getPred(Y[rand_indx], key, nfiles, nn_W, nn_b);
+        //printf("label[%3d]\t= %2d\n", rand_indx/10, maxIndx(pred, nfiles));
+        //showImage(X[rand_indx], imgw, imgh);
+    }
+
+    double t8 = omp_get_wtime();
+    
+    printf("dt2: %.5lf\n", t2 - t1);
+    printf("dt3: %.5lf\n", t3 - t2);
+    printf("dt4: %.5lf\n", t4 - t3);
+    printf("dt5: %.5lf\n", t5 - t4);
+    printf("dt6: %.5lf\n", t6 - t5);
+    printf("dt7: %.5lf\n", t7 - t6);
+    printf("dt8: %.5lf\n", t8 - t7);    
 //  free
     for(int ni=0; ni<X_rows; ni++){
         delete [] X[ni];

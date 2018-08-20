@@ -1,12 +1,15 @@
 #include <opencv2/highgui.hpp>
+#define thread_count 8
 
 using namespace std;
 using namespace cv;
+
 
 void getW(double **A, double **B, double **W, int m, int n){
     cout<<"\nGetting W ...\n"<<endl;
     double temp;
 
+#   pragma omp parallel for num_threads(thread_count)
     for(int i=0; i<m; i++){
         for(int j=0; j<n; j++){
             temp = 0.0;
@@ -18,7 +21,7 @@ void getW(double **A, double **B, double **W, int m, int n){
     }
     
     double *vecW_j = new double[m];
-
+#   pragma omp parallel for num_threads(thread_count)
     for(int jW=0; jW<n; jW++){
         for(int iW=0; iW<m; iW++){
             vecW_j[iW] = W[iW][jW];

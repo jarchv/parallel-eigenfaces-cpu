@@ -1,11 +1,28 @@
 #include <iostream>
 #include <math.h>
 #include <opencv2/highgui.hpp>
+#include <limits>
+#include <omp.h>
 
 #define PATH "faces/"
+#define thread_count 8
 
 using namespace std;
 using namespace cv;	
+
+int maxIndx(double *pred_in, int size){
+	double temp = pred_in[0];
+	int indx = 0;
+	for (int i = 1; i < size; i++)
+	{
+		if (pred_in[i] > temp){
+			indx = i;
+			temp = pred_in[i];
+		}
+	}
+
+	return indx;
+}
 
 double norm(double *A, int n){
     double temp=0.0;
@@ -38,6 +55,7 @@ void readImages(double **X, int folders, int nimgs, int h, int w){
 
     int         n=0;
 
+//#   pragma omp parallel for num_threads(thread_count)
     for(int i=1; i<=folders; i++){
         for(int j=1; j<=nimgs; j++){
             ifolder     = "s" + to_string(i)+"/";
@@ -55,12 +73,13 @@ void readImages(double **X, int folders, int nimgs, int h, int w){
             }             
         }
     }
-    cout <<"\n#elements(X.rows) = "<<n+1<<endl;  
+    cout <<"\n#elements(X.rows) = "<<folders*nimgs<<endl;  
 }
 
 void getS(double **S, double **X, double **Xm, double **Xm_t, double *V, int X_rows, int X_cols){
   //   Get Xm (all column with mu_j = 0)
     int mu;
+
     for(int pi=0; pi<X_cols; pi++){
         mu = 0;
         for(int ni=0; ni<X_rows; ni++){
@@ -75,6 +94,7 @@ void getS(double **S, double **X, double **Xm, double **Xm_t, double *V, int X_r
     cout<<"\n->\tXm"<<endl;
 
 //  Get transpose
+#   pragma omp parallel for num_threads(thread_count)
     for(int ni=0; ni<X_rows; ni++){
         for(int pi=0; pi<X_cols; pi++){
             Xm_t[pi][ni] = Xm[ni][pi];
@@ -84,6 +104,7 @@ void getS(double **S, double **X, double **Xm, double **Xm_t, double *V, int X_r
 
 //  Get S
     double temp;
+#   pragma omp parallel for num_threads(thread_count)
     for(int sr=0; sr<X_rows; sr++){
         for(int sc=0; sc<X_rows; sc++){
             temp=0.0;
