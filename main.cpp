@@ -164,7 +164,8 @@ int main(int argc, char *argv[]){
         //showImage(X[rand_indx], imgw, imgh);
     }
 
-    printf("Acc \t: %.4f%\n", 100*valid/X_rows);
+    double n = (double)X_rows;
+    cout<<"Acc :"<<100*valid/n;
     double t6 = omp_get_wtime();
     
     printf("dt1: %.5lf\n", t2 - t1);
