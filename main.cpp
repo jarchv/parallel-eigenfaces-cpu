@@ -23,7 +23,7 @@ void getVD(double **S, double *lambda, double **eigV, double tol1, double tol2);
 void showImage(double **I, int j, int w, int h);
 
 int main(int argc, char *argv[]){
-    
+    printf("\nPress ESC to close an image\n");
     thread_count = strtol(argv[1], NULL, 10);
     int             i,j,k;
     int             nfiles = 40;            //  # folders
@@ -82,14 +82,18 @@ int main(int argc, char *argv[]){
     double *temp = new double[X_cols];
 
 
-
+    printf("Eigenvectors:\n");
+    printf("=============\n\n");
     for(int j=0; j < 16; j++){
         for(int i=0; i< X_cols; i++){
             temp[i] = W[i][j];
         }
+        cout<<"\tVec["<<j<<"] -> Press ESC"<<endl;
         showImage(temp, imgw, imgh);
     }
 
+    printf("\nReconstructor:\n");
+    printf("==============\n");
     for(int ir=10; ir < X_rows; ir+=10){
         temp = Reconstructor(Xm[0], W, X_cols, ir);
         cout<<"\tk -> "<<ir<<endl;
