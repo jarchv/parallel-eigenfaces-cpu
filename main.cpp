@@ -5,17 +5,10 @@
 *   @purpose    : Parallel implementation of eigenfaces
 */
 
-#include <stdio.h>
-#include <string>
-#include <omp.h>
-
 #include "tools.hpp"
 #include "eig.hpp"
-#include "images.hpp"
+#include "image.hpp"
 #include "nn.hpp"
-
-using namespace cv;
-
 
 void readImages(double **X, int folders, int nimgs, int rows, int cols);
 void getS(double **S, double **X, double **Xm, double **Xm_t, double *V, int X_row, int X_cols);
@@ -24,11 +17,12 @@ void showImage(double **I, int j, int w, int h);
 
 int main(int argc, char *argv[]){
     printf("\nPress ESC to close an image\n");
-    thread_count = strtol(argv[1], NULL, 10);
+    
     int             i,j,k;
-    int             nfiles = 40;            //  # folders
+    int             nfiles     = 40;            //  # folders
     int             file_imgs  = 10;        //  # imgs x folder
 
+    int             nthreads   = strtol(argv[1], NULL, 10);
 //  Matrix X, Xm, Xm_t
     double          **X;
     double          **Xm;
@@ -151,8 +145,6 @@ int main(int argc, char *argv[]){
     }
     printf("\tloss (epoch: %3d)\t: %0.6f\n", 100, loss);
     double t5 = omp_get_wtime();    
-    cout<<"\ntest:"<<endl;
-    cout<<"====="<<endl;
 
     int rand_indx;
     double valid=0;
@@ -168,7 +160,7 @@ int main(int argc, char *argv[]){
     }
 
     double n = (double)X_rows;
-    cout<<"Accuracy :"<<100*valid/n<<"%"<<endl;
+    cout<<"\nAccuracy :"<<100*valid/n<<"%"<<endl;
     
     printf("\nEigenfaces(PCA)\t: %.5lf\ns", t2 - t1);
     printf("Training(NN)\t: %.5lf\ns", t5 - t4);   

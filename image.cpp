@@ -1,33 +1,32 @@
-#include <opencv2/highgui.hpp>
+#include "image.hpp"
+#include "tools.hpp"
 
-using namespace std;
-using namespace cv;
+void readImages(double **X, int folders, int nimgs, int h, int w){
+    string      ifolder;
+    string      jimage;
+    string      filename;
 
+    int         n=0;
 
-void getW(double **A, double **B, double **W, int m, int n){
-    cout<<"\nGetting W ...\n"<<endl;
-    double temp;
+    for(int i=1; i<=folders; i++){
+        for(int j=1; j<=nimgs; j++){
+            ifolder     = "s" + to_string(i)+"/";
+            jimage      = to_string(j) + ".pgm";
+            filename    = PATH + ifolder + jimage;
 
-    for(int i=0; i<m; i++){
-        for(int j=0; j<n; j++){
-            temp = 0.0;
-            for(int k=0; k<n; k++){
-                temp += A[i][k]*B[k][j];                
-            }
-            W[i][j] = temp;
+            Mat I = imread(filename, IMREAD_GRAYSCALE);
+
+            n = (i-1)*nimgs + (j-1);
+
+#           pragma omp parallel for num_threads(thread_count)
+            for(int ri=0; ri<h; ri++){
+                for(int ci=0; ci<w; ci++){ 
+                    X[n][ri*w + ci] = (double)I.at<uint8_t>(ri,ci);
+                }
+            }             
         }
     }
-    
-    double *vecW_j = new double[m];
-    for(int jW=0; jW<n; jW++){
-        for(int iW=0; iW<m; iW++){
-            vecW_j[iW] = W[iW][jW];
-        }
-        VecNormalizer(vecW_j, m);
-        for(int iW=0; iW<m; iW++){
-            W[iW][jW] = vecW_j[iW];
-        }       
-    }
+    cout <<"\n#elements(X.rows) = "<<folders*nimgs<<endl;  
 }
 
 void showImage(double *I, int w, int h){
